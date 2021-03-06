@@ -1,17 +1,23 @@
-from machine import UART
+import wifi
+import sensor
+import lora
+import time
+from network import LoRa
 
-uart = UART(1)
 
-uart.init(baudrate=9600, bits=8, parity=None, stop=1, timeout_chars=100)
+LoRa = lora.init()
+print("LoRa")
+if not LoRa.has_joined():
+    wifi.set_connect()
+    print("wifi")
 
+sensor.defsensor()
+print("sensor")
 while True:
-    header_bytes = uart.read(1)
-    while(header_bytes != b'\xff'):
-         header_bytes = uart.read(1)
-    DATA_H = int(uart.read(1)[0])
-    DATA_L = int(uart.read(1)[0])
-    SUM = int(uart.read(1)[0])
 
-    if(DATA_H + DATA_L - SUM):
-        distance = (DATA_H*256)+DATA_L
-        print(distance)
+    distance = sensor.getdistance()
+    if not LoRa.has_joined():
+        wifi.send(distance)
+    else:
+        lora.send(distance)
+    time.sleep(10)
